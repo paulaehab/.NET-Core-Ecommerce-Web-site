@@ -22,23 +22,43 @@ namespace Bulky.DataAccess.Repository
             // _db.categories == dbset
             // this becuase we make it as a generic class for category 
             // or product or whatever
+
+            //this will map foreign keys 
+            _db.products.Include(u => u.Category).Include(u=>u.CategoryId);
+
         }
         public void Add(T entity)
         {
             dbSet.Add(entity);
         }
 
-        public T Get(Expression<Func<T, bool>> filter)
+        public T Get(Expression<Func<T, bool>> filter, string? includeProperties = null)
         {
 
             IQueryable<T> query = dbSet;
             query = query.Where(filter);
+            if (!string.IsNullOrEmpty(includeProperties))
+            {
+                foreach (var includeProp in includeProperties.
+                    Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProp);
+                }
+            }
             return query.FirstOrDefault();
         }
 
-        public IEnumerable<T> GetAll()
+        public IEnumerable<T> GetAll(string? includeProperties=null)
         {
             IQueryable<T> query = dbSet;
+            if(!string.IsNullOrEmpty(includeProperties))
+            {
+                foreach(var includeProp in includeProperties.
+                    Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProp);
+                }
+            }
             return query.ToList();
 
         }
