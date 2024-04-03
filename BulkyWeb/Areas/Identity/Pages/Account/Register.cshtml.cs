@@ -109,6 +109,7 @@ namespace BulkyWeb.Areas.Identity.Pages.Account
 
             [ValidateNever]
             public IEnumerable<SelectListItem> RoleList { get; set; }
+
         }
 
 
@@ -122,6 +123,15 @@ namespace BulkyWeb.Areas.Identity.Pages.Account
                 _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin)).GetAwaiter().GetResult();
                 _roleManager.CreateAsync(new IdentityRole(SD.Role_Company)).GetAwaiter().GetResult();
             }
+
+            Input = new()
+            {
+                RoleList = _roleManager.Roles.Select(x => x.Name).Select(i => new SelectListItem
+                {
+                    Text = i,
+                    Value = i
+                })
+            };
 
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
@@ -143,6 +153,14 @@ namespace BulkyWeb.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
+                    if (!String.IsNullOrEmpty(Input.Role))
+                    {
+                        await _userManager.AddToRoleAsync(user, Input.Role);  
+                    }
+                    else
+                    {
+                        await _userManager.AddToRoleAsync(user, SD.Role_Customer);
+                    }
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
