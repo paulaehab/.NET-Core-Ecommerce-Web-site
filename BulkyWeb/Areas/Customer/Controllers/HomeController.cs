@@ -1,7 +1,9 @@
 using Bulky.DataAccess.Repository.IRepository;
 using Bulky.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace BulkyWeb.Areas.Customer.Controllers
 {
@@ -23,8 +25,51 @@ namespace BulkyWeb.Areas.Customer.Controllers
         }
         public IActionResult Details(int productId)
         {
-            Product product = _unitOfWork.Product.Get(u=>u.ID== productId, includeProperties: "Category");
-            return View(product);
+            ShoppingCart cart = new()
+            {
+                Product = _unitOfWork.Product.Get(u => u.ID == productId, includeProperties: "Category"),
+                Count = 1,
+                ProductId = productId
+        };
+            return View(cart);
+        }
+        [HttpPost]
+        [Authorize]
+        public IActionResult Details(ShoppingCart shoppingCart)
+        {
+            // 1- need to catch the user id which add things to shopping cart 
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+            shoppingCart.ApplicationUserId = userId;
+
+            // need to check if the cart doesn't exist before for the same product and useris it only change in count 
+            // then it will be update the count only (to prevent duplicates )
+
+            ShoppingCart cartfromDB = _unitOfWork.ShoppingCart.Get(u => u.ApplicationUserId == userId &&
+            u.ProductId == shoppingCart.ProductId);
+
+            if (cartfromDB != null)
+            {
+                //cart already exists
+                cartfromDB.Count += shoppingCart.Count;
+                _unitOfWork.ShoppingCart.Update(cartfromDB);
+
+            }
+            else
+            { //add new cart
+                _unitOfWork.ShoppingCart.Add(shoppingCart);
+
+            }
+
+
+
+
+            // 2- add the shopping cart to the db 
+            //3- save 
+            _unitOfWork.Save();
+
+            
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Privacy()
