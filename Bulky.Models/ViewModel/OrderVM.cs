@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bulky.Models
+namespace Bulky.Models.ViewModel
 {
-    public class ShoppingCartVM
+    public class OrderVM
     {
-        public IEnumerable<ShoppingCart> ShoppingCartList { get; set; }
-
         public OrderHeader OrderHeader { get; set; }
+        public IEnumerable<OrderDetail> OrderDetail { get; set; }
     }
 }
